@@ -13,7 +13,9 @@ defmodule OrchidDBTest do
           columns: [%{name: "id", data_type: "int64"}, %{name: "name", data_type: "string"}]
         }
       ],
-      nodes: [%{label: "Person", table: "people", id: "id", properties: %{id: "id", name: "name"}}]
+      nodes: [
+        %{label: "Person", table: "people", id: "id", properties: %{id: "id", name: "name"}}
+      ]
     }
   end
 
@@ -41,7 +43,13 @@ defmodule OrchidDBTest do
 
     try do
       {:ok, _} = Adbc.Connection.query(source, "CREATE TABLE people(id BIGINT, name VARCHAR)")
-      {:ok, _} = Adbc.Connection.query(source, "INSERT INTO people VALUES (9007199254740993, 'Ada'), (2, NULL)")
+
+      {:ok, _} =
+        Adbc.Connection.query(
+          source,
+          "INSERT INTO people VALUES (9007199254740993, 'Ada'), (2, NULL)"
+        )
+
       assert {:ok, _} =
                OrchidDB.query_arrow(
                  source,
@@ -51,8 +59,13 @@ defmodule OrchidDBTest do
                  end
                )
 
-      assert {:ok, result} = Adbc.Connection.query(sink, "SELECT id, name FROM copied ORDER BY id")
-      assert Adbc.Result.to_map(result) == %{"id" => [2, 9007199254740993], "name" => [nil, "Ada"]}
+      assert {:ok, result} =
+               Adbc.Connection.query(sink, "SELECT id, name FROM copied ORDER BY id")
+
+      assert Adbc.Result.to_map(result) == %{
+               "id" => [2, 9_007_199_254_740_993],
+               "name" => [nil, "Ada"]
+             }
 
       assert_raise RuntimeError, "consumer failed", fn ->
         OrchidDB.query_arrow(source, request("RETURN 1 AS answer"), fn _stream ->
@@ -61,11 +74,22 @@ defmodule OrchidDBTest do
       end
 
       assert {:ok, _} = Adbc.Connection.query(source, "BEGIN")
-      assert {:ok, _} = Adbc.Connection.query(source, "INSERT INTO people VALUES (3, 'transaction')")
-      assert {:ok, _} = OrchidDB.query_arrow(source, request("MATCH (p:Person) RETURN p.id AS id"), fn stream ->
-        Adbc.Connection.bulk_insert!(sink, stream, table: "transaction_snapshot")
-      end)
-      assert {:ok, result} = Adbc.Connection.query(sink, "SELECT count(*) AS n FROM transaction_snapshot")
+
+      assert {:ok, _} =
+               Adbc.Connection.query(source, "INSERT INTO people VALUES (3, 'transaction')")
+
+      assert {:ok, _} =
+               OrchidDB.query_arrow(
+                 source,
+                 request("MATCH (p:Person) RETURN p.id AS id"),
+                 fn stream ->
+                   Adbc.Connection.bulk_insert!(sink, stream, table: "transaction_snapshot")
+                 end
+               )
+
+      assert {:ok, result} =
+               Adbc.Connection.query(sink, "SELECT count(*) AS n FROM transaction_snapshot")
+
       assert Adbc.Result.to_map(result) == %{"n" => [3]}
       assert {:ok, _} = Adbc.Connection.query(source, "ROLLBACK")
       assert {:ok, result} = Adbc.Connection.query(source, "SELECT count(*) AS n FROM people")
