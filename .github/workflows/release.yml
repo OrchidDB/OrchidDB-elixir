@@ -36,6 +36,8 @@ jobs:
         with:
           workspaces: compiler/orchiddb-native
       - name: Build pinned compiler
+        env:
+          ORCHIDDB_RELEASE_BUILD: '1'
         shell: bash
         run: cargo build --locked --release --manifest-path compiler/orchiddb-native/Cargo.toml
       - uses: erlef/setup-beam@v1
