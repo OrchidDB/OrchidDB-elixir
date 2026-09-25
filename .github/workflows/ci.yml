@@ -1,0 +1,44 @@
+name: Elixir Arrow integration
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read compiler pins
+        id: pins
+        shell: bash
+        run: |
+          echo "native=$(cat NATIVE_REVISION)" >> "$GITHUB_OUTPUT"
+          echo "core=$(cat CORE_REVISION)" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with:
+          repository: OrchidDB/OrchidDB-native
+          ref: ${{ steps.pins.outputs.native }}
+          path: compiler/orchiddb-native
+      - uses: actions/checkout@v4
+        with:
+          repository: OrchidDB/OrchidDB
+          ref: ${{ steps.pins.outputs.core }}
+          path: compiler/orchiddb
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: compiler/orchiddb-native
+      - name: Build pinned compiler
+        shell: bash
+        run: cargo build --locked --release --manifest-path compiler/orchiddb-native/Cargo.toml
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: '27'
+          elixir-version: '1.18'
+      - run: mix deps.get
+      - name: Test native compiler and Arrow C Stream
+        env:
+          ORCHIDDB_NATIVE_LIBRARY: ${{ github.workspace }}/compiler/orchiddb-native/target/release/liborchiddb_compiler.so
+        run: |
+          mix format --check-formatted
+          mix test
+          mix hex.build
