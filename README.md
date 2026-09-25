@@ -18,6 +18,7 @@ mix deps.get
 export ORCHIDDB_NATIVE_LIBRARY=/absolute/path/liborchiddb_compiler.dylib
 mix test
 mix run examples/compile.exs
+mix run examples/duckdb.exs
 ```
 
 The small C NIF builds with your system compiler (`make`, Erlang headers and `cc`).
@@ -52,9 +53,10 @@ Requests support `cypher`, `gremlin`, and `sparql`; mapping, schema, ontology an
 function signatures follow core's JSON v1 compiler contract. DuckDB and PostgreSQL
 SQL rendering are supported; no federation or native Gremlin executor is included.
 Parameters are literals specialized into SQL; compile again after changing them.
-Errors return `{:error, reason}`. The test suite uses SQLite ADBC to verify actual
-Arrow C Stream ingestion of simple generated SELECTs; this does not claim a SQLite
-compiler dialect or validate all DuckDB SQL on SQLite.
+Errors return `{:error, reason}`. The integration suite uses the real DuckDB ADBC driver to execute compiled graph
+queries and ingest Arrow C Streams directly. It verifies int64 values, nulls,
+caller transactions/rollback, connection reuse, and consumer-error cleanup.
+Run `mix test` to download the DuckDB test driver and exercise the complete path.
 
 ## Release
 
