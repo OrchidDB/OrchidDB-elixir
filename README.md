@@ -11,18 +11,18 @@ the compiler NIF, and no row or IPC conversion is required.
 # Add {:adbc, "~> 0.12"} when using the Arrow execution convenience function.
 ```
 
-This package is prepared for Hex publication, not yet published. For local use:
+Version 0.1.0 is published on Hex. Run the standalone example against that package:
 
 ```sh
+cd examples
 mix deps.get
 export ORCHIDDB_NATIVE_LIBRARY=/absolute/path/liborchiddb_compiler.dylib
-mix test
-mix run examples/compile.exs
-mix run examples/duckdb.exs
+mix run compile.exs
+mix run duckdb.exs
 ```
 
 The small C NIF builds with your system compiler (`make`, Erlang headers and `cc`).
-macOS and Linux are supported. Build the matching compiler from
+The [macOS ARM64 compiler archive](https://github.com/OrchidDB/OrchidDB-native/releases/download/v0.1.0/orchiddb-compiler-v0.1.0-aarch64-apple-darwin.tar.gz) supplies the library without a Rust build. Extract it and set the variable above to its `lib/liborchiddb_compiler.dylib`. For other platforms, build the matching compiler from
 [OrchidDB-native](https://github.com/OrchidDB/OrchidDB-native) at `NATIVE_REVISION`;
 its core revision must match `CORE_REVISION`. No compiler binary is downloaded
 implicitly. The compiler uses a dirty CPU scheduler and its own Rust runtime.
@@ -62,9 +62,7 @@ Run `mix test` to download the DuckDB test driver and exercise the complete path
 
 `mix hex.build` creates the source package including the C NIF. Workflow
 `release.yml` validates the matching version tag and publishes with the repository
-secret `HEX_API_KEY` in environment `hex`. Hex package `orchiddb` was available at
-check time, not reserved. Configure the owning Hex account before publication.
-No registry publication has been performed. Compiler binaries are independently
+secret `HEX_API_KEY` in environment `hex`. Hex package `orchiddb` version 0.1.0 is published. Compiler binaries are independently
 released from OrchidDB-native and pinned here.
 
 [GPL-3.0-only license](LICENSE.md).

@@ -33,10 +33,12 @@ try do
     end)
 
   # Materialize rows only to display this small example.
-  destination
+  result = destination
   |> Adbc.Connection.query!("SELECT * FROM graph_result ORDER BY id")
   |> Adbc.Result.to_map()
   |> IO.inspect()
+  unless result["id"] == [2, 9007199254740993] and result["name"] == [nil, "Ada"],
+    do: raise("Unexpected graph results")
 after
   GenServer.stop(connection)
   GenServer.stop(destination)
